@@ -27,11 +27,13 @@ commands:
           # Add when this will run
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
+            SUCCESS=$(curl --insecure https://kvdb.io/PgKoNZ8P5pwbtT7izQRiU1/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            #SUCCESS = 1
             if(( $SUCCESS==1 )); 
             then
-            #  cd ~/project/backend
-            #  npm install
+               cd ~/project/backend
+               npm install
+               npm run migration:revert
             #  Add revert code here. You can find this in the Getting Started section.
               exit 1
             fi
@@ -263,15 +265,18 @@ jobs:
             cd backend
             if grep -q "success" migrations-${CIRCLE_WORKFLOW_ID}.txt
             then
-              curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
-              --request PUT \
-              --data '1' \
-              https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+              # curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
+              # --request PUT \
+              # --data '1' \
+              # https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+              curl https://kvdb.io/PgKoNZ8P5pwbtT7izQRiU1/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             else
-              curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
-              --request PUT \
-              --data '0' \
-              https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+              # curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
+              # --request PUT \
+              # --data '0' \
+              # https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+              curl https://kvdb.io/PgKoNZ8P5pwbtT7izQRiU1/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '0'
+
             fi
             echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:7}  
             exit 1
@@ -356,28 +361,38 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-#   smoke-test:
-#     docker:
-#       # Lightweight Docker image 
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Get backend url
-#           command: |
-#             # your code here
-#       - run:
-#           name: Backend smoke test.
-#           command: |
-#             # your code here
-#       - run:
-#           name: Frontend smoke test.
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  smoke-test:
+    docker:
+      # Lightweight Docker image
+        - image: python:3.7-alpine3.11
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            apk add --no-cache \
+              curl \
+              python3 \
+              py3-pip \
+              && pip3 install --upgrade pip \
+              && pip3 install \
+              awscli \
+              && rm -rf /var/cache/apk/*
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+      - run:
+          name: Backend smoke test.
+          command: |
+            # your code here
+      - run:
+          name: Frontend smoke test.
+          command: |
+            # your code here
+      # Here's where you will add some code to rollback on failure  
 
 #   cloudfront-update:
 #     docker:
