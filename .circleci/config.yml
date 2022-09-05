@@ -102,23 +102,52 @@ jobs:
             
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-build  
-#   scan-frontend:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       # Restore from cache
-#       # Your job code here
+          key: backend-build
 
-#   scan-backend:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       # Restore from cache
-#       # Your job code here
+  scan-frontend:
+    docker:
+    - image: circleci/node:13.8.0
+      # Docker image here
+    steps:
+      # Checkout code from git
+    - checkout
+      # Restore from cache
+    - restore_cache:
+        keys: [frontend-build]
+    - run:
+      # Your job code here
+        name: scan-frontend
+        command: |
+          cd frontend
+          npm install
+          npm audit --audit-level=critical
+    - save_cache:
+          paths: [frontend/node_modules]
+          key: frontend-build
+      # Your job code here
+    
 
+  scan-backend:
+    docker:
+      # Docker image here
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      # Restore from cache
+      - restore_cache:
+          keys: [scan-backend]
+          
+      # Your job code here
+      - run:
+          name: scan-backend
+          command: |
+            cd backend
+            npm install
+            npm audit --audit-level=critical
+      - save_cache:
+          paths: [backend/node_modules]
+          key: test-backend 
 #   deploy-infrastructure:
 #     docker:
 #       # Docker image here that supports AWS CLI
@@ -309,7 +338,7 @@ workflows:
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
       #     requires: [run-migrations]
-      # - deploy-backend:
+      # - deploy-backend:GIT
       #     requires: [run-migrations]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
