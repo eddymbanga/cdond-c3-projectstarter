@@ -235,57 +235,126 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - attach_workspace:
+          at: ~/project
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Run migrations
+          no_output_timeout: 7m
           command: |
             # Your code here
-            exit 1
+            
+            pwd
+            ls
+            #cd backend && npm run migrations | tee migrations-${CIRCLE_WORKFLOW_ID}.txt
+            cd backend
+            cat .env
+            npm run migrations | tee migrations-${CIRCLE_WORKFLOW_ID}.txt
+            cat migrations-${CIRCLE_WORKFLOW_ID}.txt
+            
       - run:
           name: Send migration results to memstash
           command: |
             # Your code here
+            cd backend
+            if grep -q "success" migrations-${CIRCLE_WORKFLOW_ID}.txt
+            then
+              curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
+              --request PUT \
+              --data '1' \
+              https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+            else
+              curl -H "Content-Type: text/plain" -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
+              --request PUT \
+              --data '0' \
+              https://api.memstash.io/values/migrations-${CIRCLE_WORKFLOW_ID:0:7}
+            fi
+            echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:7}  
             exit 1
      # Here's where you will add some code to rollback on failure      
 
-#   deploy-frontend:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Get backend url
-#           command: |
-#             # your code here
-#             export API_URL="http://${BACKEND_IP}:3030"
-#             echo "${API_URL}"
-#       - run:
-#           name: Deploy frontend objects
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure      
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
+      
+    steps:
+      # Checkout code from git
+      - checkout
+    
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash - #
+            yum -y install nodejs
+            yum -y install tar gzipi
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo API_URL="http://${BACKEND_IP}:3030" >> "frontend/.env"
+            echo "${API_URL}"
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            # your code here
+            npm install webpack-dev-server -g
+            cd frontend
+            npm install chokidar
+            npm install
+            npm run build
+            aws s3 cp ./dist s3://udapeople-kk1j287dhjppmz7894 --recursive
+      # Here's where you will add some code to rollback on failure      
                     
-#   deploy-backend:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Deploy backend
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+       - image: python:3.7-alpine3.11
+    steps:
+      # Checkout code from git
+      - checkout 
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: ["62:da:f7:52:a2:f1:12:31:43:eb:2b:9e:75:ef:24:38"]
+      # attach workspace
+      - attach_workspace:
+          at: ~/project
+      - restore_cache:
+          keys: [backend-build]
+
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            apk add --update tar gzip ansible nodejs npm curl openssh-client
+            pip install awscli
+      - run:
+          name: Deploy backend
+          no_output_timeout: 30m
+          command: |
+            # your code here
+            pwd            
+            cd .circleci/ansible
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text >> inventory.txt)
+      # Here's where you will add some code to rollback on failure  
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 #   smoke-test:
 #     docker:
@@ -368,10 +437,10 @@ workflows:
               
       - configure-infrastructure:
            requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
+      #- run-migrations:
+          # requires: [configure-infrastructure]
+      #- deploy-frontend:
+          # requires: [run-migrations]
       # - deploy-backend:GIT
       #     requires: [run-migrations]
       # - smoke-test:
