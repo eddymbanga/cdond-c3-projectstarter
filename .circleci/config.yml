@@ -241,7 +241,7 @@ jobs:
     steps:
       # Checkout code from git
       - attach_workspace:
-          at: ~/project
+          at: ~/
       - restore_cache:
           keys: [backend-build]
       - run:
