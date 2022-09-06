@@ -241,7 +241,7 @@ jobs:
     steps:
       # Checkout code from git
       - attach_workspace:
-          at: ~/
+          at: ~/project
       - restore_cache:
           keys: [backend-build]
       - run:
@@ -254,7 +254,7 @@ jobs:
             ls
             #cd backend && npm run migrations | tee migrations-${CIRCLE_WORKFLOW_ID}.txt
             cd backend
-            cat .env
+            #cat .env
             npm run migrations | tee migrations-${CIRCLE_WORKFLOW_ID}.txt
             cat migrations-${CIRCLE_WORKFLOW_ID}.txt
             
