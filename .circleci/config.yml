@@ -322,7 +322,7 @@ jobs:
             npm install chokidar
             npm install
             npm run build
-            aws s3 cp ./dist s3://udapeople-kk1j287dhjppmz7894 --recursive
+            aws s3 cp ./dist s3://udapeople-eddymwangala --recursive
       # Here's where you will add some code to rollback on failure      
                     
   deploy-backend:
