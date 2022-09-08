@@ -312,8 +312,8 @@ jobs:
     docker:
       # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
-      
-      
+
+
     steps:
       # Checkout code from git
       - checkout
@@ -326,6 +326,8 @@ jobs:
             curl -sL https://rpm.nodesource.com/setup_lts.x | bash - #
             yum -y install nodejs
             yum -y install tar gzipi
+            yum install -y tar
+           
       - run:
           name: Get backend url
           command: |
