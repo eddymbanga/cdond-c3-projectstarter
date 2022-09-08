@@ -438,17 +438,18 @@ jobs:
                   --filters Name=instance-state-name,Values=running Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7} \
                   --query 'Reservations[*].Instances[*].PublicIpAddress' \
                   --output text)
-              echo "Backend IP: ${BACKEND_IP}" 
-             #curl "http://${BACKEND_IP}:3030/api/status"
+             echo "Backend IP: ${BACKEND_IP}" 
+             EC2_URL="http://${BACKEND_IP}:3030/api/status"
+             echo ${EC2_URL}
      
             #new code for smoke test.
             echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
-              return 0
-            else
-                return 1
-            fi
+            # if curl "${API_URL}/api/status" | grep "ok"
+            # then
+            #   return 0
+            # else
+            #     return 1
+            # fi
             # # your code here
             # URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"
             # if curl -s ${URL} | grep "Welcome"
