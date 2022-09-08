@@ -327,6 +327,7 @@ jobs:
             yum -y install nodejs
             yum -y install tar gzipi
             yum install -y tar
+            yum install -y tar gzip
            
       - run:
           name: Get backend url
