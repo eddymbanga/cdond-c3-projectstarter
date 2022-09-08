@@ -317,8 +317,7 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      - attach_workspace:
-          at: /root
+ 
       - run:
           name: Install dependencies
           command: |
