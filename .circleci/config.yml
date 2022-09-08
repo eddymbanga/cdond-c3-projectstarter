@@ -354,6 +354,8 @@ jobs:
             # your code here
             apk add --update tar gzip ansible nodejs npm curl openssh-client
             pip install awscli
+            apk add --update ansible rsync 
+            apk add curl
       - run:
           name: Deploy backend
           no_output_timeout: 30m
@@ -402,26 +404,31 @@ jobs:
                   --query 'Reservations[*].Instances[*].PublicIpAddress' \
                   --output text)
               echo "Backend IP: ${BACKEND_IP}"      
-                EC2_URL="ec2-34-223-3-148.us-west-2.compute.amazonaws.com:3030/api/status"
-                echo ${EC2_URL}         
-            # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
+            #new code for smoke test.
             echo "${API_URL}"
-              if curl "${API_URL}/api/status" | grep "ok"
-              then
-                return 0
-              else
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              return 0
+            else
                 return 1
+            fi
+            # # your code here
+            # URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"
+            # if curl -s ${URL} | grep "Welcome"
+            # then
+            #   return 0
+            # else
+            #   return 1
             # fi
       - run:
           name: Frontend smoke test.
           command: |
             # your code here
-              URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
-            echo ${URL} 
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+ 
             if curl -s ${URL} | grep "Welcome"
             then
-               # Change this to 0 after the job fails
+
               return 0
             else
             return 1
