@@ -12,8 +12,9 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.workflow_id >>
+            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflow_id >>
-            aws s3 rb s3://udapeople-<< parameters.workflow_id >> --force
+
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -406,11 +407,11 @@ jobs:
             # your code here
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            # if curl "${API_URL}/api/status" | grep "ok"
-            # then
-            #   return 0
-            # else
-            #   return 1
+              if curl "${API_URL}/api/status" | grep "ok"
+              then
+                return 0
+              else
+                return 1
             # fi
       - run:
           name: Frontend smoke test.
