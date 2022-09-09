@@ -367,9 +367,9 @@ jobs:
           fingerprints: ["62:da:f7:52:a2:f1:12:31:43:eb:2b:9e:75:ef:24:38"]
       # attach workspace
       - attach_workspace:
-          at: ~/project
-      - restore_cache:
-          keys: [backend-build]
+          at: ~/
+      # - restore_cache:
+      #     keys: [backend-build]
 
       - run:
           name: Install dependencies
@@ -384,12 +384,7 @@ jobs:
           no_output_timeout: 30m
           command: |
             # your code here
-            pwd            
-            cd .circleci/ansible
-            export BACKEND_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text >> inventory.txt)
+            #pwd            
             cd backend
             npm install
             npm run build
